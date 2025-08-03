@@ -1,52 +1,51 @@
 from flask import Flask, request, jsonify
-import os
 from elevenlabs import generate, save
-from scene_texts import scene_texts
-
-# API anahtarını burada belirt veya .env dosyasından çekebilirsin
-ELEVEN_API_KEY = "sk_b7d751949a4ab42dc2efac51e9b1b39f84a6ef226d702a6c"
-os.environ["ELEVEN_API_KEY"] = ELEVEN_API_KEY
-
-# Karakter-Ses ID eşleşmeleri
-CHARACTER_VOICES = {
-    "meli": "EXAVITQu4vr4xnSDxMaL",  # Yasmin Alves
-    "melo": "TxGEqnHWrfWFTfGW9XjX",  # Haven Sands
-    "narrator": "pNInz6obpgDQGcFmaJgB"  # Rachel (örnek anlatıcı)
-}
-
-# Seslerin kaydedileceği klasör
-OUTPUT_DIR = "voices"
-os.makedirs(OUTPUT_DIR, exist_ok=True)  # Klasör zaten varsa hata vermez
+import os
 
 app = Flask(__name__)
 
-# Sahne bazlı üretim
-def generate_voice(character, text, index):
-    voice_id = CHARACTER_VOICES.get(character)
-    if not voice_id:
-        return None
+# Ses dosyalarının kaydedileceği klasör
+OUTPUT_DIR = "voices"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    audio = generate(text=text, voice=voice_id, model="eleven_monolingual_v1")
-    filename = f"{OUTPUT_DIR}/{index:02d}_{character}.mp3"
-    save(audio, filename)
-    return filename
+# Karakterlere göre voice ID ve name eşlemesi
+VOICE_MAP = {
+    "meli": {"voice_id": "EXAVITQu4vr4xnSDxMaL", "file_prefix": "meli"},
+    "melo": {"voice_id": "ErXwobaYiN019PkySvjV", "file_prefix": "melo"},
+    "narrator": {"voice_id": "21m00Tcm4TlvDq8ikWAM", "file_prefix": "narrator"}
+}
 
-@app.route("/")
-def home():
-    return "Meli & Melo Voice Generator Aktif"
+# Basit demo sahneleri
+SCENE_TEXTS = {
+    "meli": [
+        "Cześć, jestem Meli! Wyruszamy w podróż przez czas!",
+        "Patrz Melo! To są dinozaury! Niesamowite!"
+    ],
+    "melo": [
+        "Hej Meli! To miejsce wygląda niesamowicie!",
+        "Uciekajmy! Ten tyranozaur wygląda groźnie!"
+    ],
+    "narrator": [
+        "Meli i Melo otwierają magiczne drzwi czasu i trafiają do ery dinozaurów."
+    ]
+}
 
 @app.route("/bulk-generate", methods=["POST"])
-def bulk_generate():
+def generate_all():
     try:
-        results = []
-        for i, scene in enumerate(scene_texts):
-            character = scene["character"]
-            text = scene["text"]
-            file_path = generate_voice(character, text, i)
-            results.append({"scene": i, "character": character, "file": file_path})
-        return jsonify({"status": "success", "generated": results})
+        for character, scenes in SCENE_TEXTS.items():
+            voice_id = VOICE_MAP[character]["voice_id"]
+            prefix = VOICE_MAP[character]["file_prefix"]
+
+            for i, text in enumerate(scenes, start=1):
+                audio = generate(text=text, voice=voice_id)
+                filename = os.path.join(OUTPUT_DIR, f"{prefix}{i}.mp3")
+                save(audio, filename)
+
+        return jsonify({"status": "success", "message": "Ses dosyaları başarıyla üretildi."})
+    
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0")
