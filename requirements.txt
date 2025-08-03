@@ -1,4 +1,5 @@
-flask
+# requirements.txt
+
+Flask==2.3.3
 requests
-moviepy
-ffmpeg-python
+gunicorn
