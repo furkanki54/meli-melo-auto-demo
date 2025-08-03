@@ -1,4 +1,4 @@
-scene_texts = [
+scene_data = [
     {"character": "narrator", "text": "Meli i Melo właśnie wkroczyli do tajemniczej bramy czasu..."},
     {"character": "meli", "text": "Wow, Melo! Gdzie jesteśmy?"},
     {"character": "melo", "text": "To wygląda jak... era dinozaurów!"},
