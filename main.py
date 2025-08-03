@@ -1,48 +1,46 @@
-from flask import Flask, request, jsonify
-from elevenlabs import generate, save
+from flask import Flask, jsonify
+from elevenlabs import Voice, VoiceSettings, generate, save, set_api_key
 import os
 
 app = Flask(__name__)
+
+# API anahtarını ayarla (gizli tut)
+set_api_key("sk_b7d751949a4ab42dc2efac51e9b1b39f84a6ef226d702a6c")
 
 # Ses dosyalarının kaydedileceği klasör
 OUTPUT_DIR = "voices"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Karakterlere göre voice ID ve name eşlemesi
-VOICE_MAP = {
-    "meli": {"voice_id": "EXAVITQu4vr4xnSDxMaL", "file_prefix": "meli"},
-    "melo": {"voice_id": "ErXwobaYiN019PkySvjV", "file_prefix": "melo"},
-    "narrator": {"voice_id": "21m00Tcm4TlvDq8ikWAM", "file_prefix": "narrator"}
-}
-
-# Basit demo sahneleri
-SCENE_TEXTS = {
-    "meli": [
-        "Cześć, jestem Meli! Wyruszamy w podróż przez czas!",
-        "Patrz Melo! To są dinozaury! Niesamowite!"
-    ],
-    "melo": [
-        "Hej Meli! To miejsce wygląda niesamowicie!",
-        "Uciekajmy! Ten tyranozaur wygląda groźnie!"
-    ],
-    "narrator": [
-        "Meli i Melo otwierają magiczne drzwi czasu i trafiają do ery dinozaurów."
-    ]
-}
-
 @app.route("/bulk-generate", methods=["POST"])
-def generate_all():
+def bulk_generate():
     try:
-        for character, scenes in SCENE_TEXTS.items():
-            voice_id = VOICE_MAP[character]["voice_id"]
-            prefix = VOICE_MAP[character]["file_prefix"]
+        # Test sahneler (sadece 2 tane örnek)
+        scene_texts = {
+            "meli": ["Cześć, jestem Meli! Wyruszamy w podróż przez czas!"],
+            "melo": ["Cześć! Jestem Melo i jestem gotów na przygodę!"],
+            "narrator": ["Witajcie w naszej historii pełnej niespodzianek."]
+        }
 
-            for i, text in enumerate(scenes, start=1):
-                audio = generate(text=text, voice=voice_id)
-                filename = os.path.join(OUTPUT_DIR, f"{prefix}{i}.mp3")
-                save(audio, filename)
+        voice_ids = {
+            "meli": "EXAVITQu4vr4xnSDxMaL",    # Yasmin Alves
+            "melo": "MF3mGyEYCl7XYWbV9V6O",    # Haven Sands
+            "narrator": "21m00Tcm4TlvDq8ikWAM" # Rachel (örnek anlatıcı)
+        }
 
-        return jsonify({"status": "success", "message": "Ses dosyaları başarıyla üretildi."})
+        for character, lines in scene_texts.items():
+            for i, line in enumerate(lines):
+                audio = generate(
+                    text=line,
+                    voice=Voice(
+                        voice_id=voice_ids[character],
+                        settings=VoiceSettings(stability=0.5, similarity_boost=0.7)
+                    ),
+                    model="eleven_monolingual_v1"
+                )
+                filename = f"{character}{i+1}.mp3"
+                save(audio, os.path.join(OUTPUT_DIR, filename))
+
+        return jsonify({"status": "success", "message": "Ses dosyaları oluşturuldu."})
     
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
