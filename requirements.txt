@@ -1,5 +1,3 @@
-# requirements.txt
-
 Flask==2.3.3
 requests
-gunicorn
+gunicorn==21.2.0
