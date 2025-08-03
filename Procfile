@@ -1,1 +1,3 @@
-web: python main.py
+# Procfile
+
+web: gunicorn main:app
