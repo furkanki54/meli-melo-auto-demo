@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from generate import generate_voice
+from generate_scenes import generate_voice
 import os
 
 app = Flask(__name__)
