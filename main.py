@@ -11,7 +11,7 @@ def bulk_generate():
     if not isinstance(data, list):
         return jsonify({"status": "error", "message": "Data must be a list"}), 400
 
-    output_dir = "voices"
+    output_dir = "static/voices"
     os.makedirs(output_dir, exist_ok=True)
 
     file_urls = []
@@ -24,9 +24,12 @@ def bulk_generate():
             continue
 
         filename = f"{idx:02d}_{character}.mp3"
-        generate_voice(character, text, filename)
+        try:
+            generate_voice(character, text, filename)
+        except Exception as e:
+            print(f"[HATA] {character} sesi üretilemedi: {e}")
+            continue
 
-        # ✅ MP3 dosyalarının URL'si burada oluşturuluyor
         file_url = f"https://web-production-c6b3.up.railway.app/static/voices/{filename}"
         file_urls.append({
             "character": character,
@@ -38,6 +41,6 @@ def bulk_generate():
         "files": file_urls
     })
 
-# ❗ Bu kısmı KALDIR / YORUM SATIRI yap – Railway zaten gunicorn ile çalıştırıyor
+# Railway kullanıyorsan aşağıyı YORUM yap
 # if __name__ == "__main__":
 #     app.run(debug=True)
