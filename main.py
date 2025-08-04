@@ -27,7 +27,7 @@ def bulk_generate():
         generate_voice(character, text, filename)
 
         # ✅ MP3 dosyalarının URL'si burada oluşturuluyor
-        file_url = f"https://web-production-c6b3.up.railway.app/voices/{filename}"
+        file_url = f"https://web-production-c6b3.up.railway.app/static/voices/{filename}"
         file_urls.append({
             "character": character,
             "file_url": file_url
