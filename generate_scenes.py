@@ -1,5 +1,4 @@
 from elevenlabs import generate, save
-from scene_texts import scene_data
 import os
 
 OUTPUT_DIR = "static/voices"
@@ -18,10 +17,5 @@ def generate_voice(character, text, filename):
         filepath = os.path.join(OUTPUT_DIR, filename)
         save(audio, filepath)
     except Exception as e:
-        print(f"[HATA] Ses üretilemedi: {character} – {e}")
-def generate_all():
-    for idx, scene in enumerate(scene_data, start=1):
-        character = scene["character"]
-        text = scene["text"]
-        filename = f"{idx:02d}_{character}.mp3"
-        generate_voice(character, text, filename)
+        print(f"[HATA] generate_voice hata: {e}")
+        raise e
