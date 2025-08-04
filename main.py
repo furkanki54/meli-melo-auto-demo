@@ -1,46 +1,83 @@
 from flask import Flask, request, jsonify
-from generate_scenes import generate_voice
 import os
+import uuid
+import requests
 
 app = Flask(__name__)
+
+# STATIC KLASÖRÜ OTOMATİK OLUŞTUR
+os.makedirs("static/auto_voices", exist_ok=True)
+
+ELEVENLABS_API_KEY = "sk_b7d751949a4ab42dc2efac51e9b1b39f84a6ef226d702a6c"
+
+VOICE_IDS = {
+    "meli": "EXAVITQu4vr4xnSDxMaL",   # Yasmin Alves
+    "melo": "MF3mGyEYCl7XYWbV9V6O",   # Haven Sands
+    "narrator": "21m00Tcm4TlvDq8ikWAM"  # Rachel (örnek)
+}
 
 @app.route("/bulk-generate", methods=["POST"])
 def bulk_generate():
     data = request.get_json()
+    if not data:
+        return jsonify({"status": "error", "message": "JSON eksik."}), 400
 
-    if not isinstance(data, list):
-        return jsonify({"status": "error", "message": "Data must be a list"}), 400
+    results = []
 
-    output_dir = "static/voices"
-    os.makedirs(output_dir, exist_ok=True)
+    for item in data:
+        character = item.get("character")
+        text = item.get("text")
 
-    file_urls = []
+        if character not in VOICE_IDS:
+            return jsonify({"status": "error", "message": f"Geçersiz karakter: {character}"}), 400
 
-    for idx, scene in enumerate(data, start=1):
-        character = scene.get("character")
-        text = scene.get("text")
+        voice_id = VOICE_IDS[character]
+        filename = f"{uuid.uuid4().hex}_{character}.mp3"
+        filepath = os.path.join("static/auto_voices", filename)
 
-        if not character or not text:
-            continue
+        # ElevenLabs API ile ses üretimi
+        response = requests.post(
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+            headers={
+                "xi-api-key": ELEVENLABS_API_KEY,
+                "Content-Type": "application/json"
+            },
+            json={
+                "text": text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {
+                    "stability": 0.4,
+                    "similarity_boost": 0.75
+                }
+            }
+        )
 
-        filename = f"{idx:02d}_{character}.mp3"
-        try:
-            generate_voice(character, text, filename)
-        except Exception as e:
-            print(f"[HATA] {character} sesi üretilemedi: {e}")
-            continue
+        if response.status_code != 200:
+            return jsonify({
+                "status": "error",
+                "message": f"Ses üretimi başarısız: {character}",
+                "details": response.text
+            }), 500
 
-        file_url = f"https://web-production-c6b3.up.railway.app/static/voices/{filename}"
-        file_urls.append({
+        # MP3 dosyasını yaz
+        with open(filepath, "wb") as f:
+            f.write(response.content)
+
+        # Linki ekle
+        file_url = f"https://{request.host}/static/auto_voices/{filename}"
+        results.append({
             "character": character,
             "file_url": file_url
         })
 
     return jsonify({
         "status": "success",
-        "files": file_urls
+        "results": results
     })
 
-# Railway kullanıyorsan aşağıyı YORUM yap
-# if __name__ == "__main__":
-#     app.run(debug=True)
+@app.route("/", methods=["GET"])
+def home():
+    return "API çalışıyor!"
+
+if __name__ == "__main__":
+    app.run(debug=True)
