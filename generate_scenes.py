@@ -12,11 +12,13 @@ VOICE_MAP = {
 }
 
 def generate_voice(character, text, filename):
-    voice = VOICE_MAP.get(character.lower(), "Rachel")
-    audio = generate(text=text, voice=voice, model="eleven_multilingual_v2")
-    filepath = os.path.join(OUTPUT_DIR, filename)
-    save(audio, filepath)
-
+    try:
+        voice = VOICE_MAP.get(character.lower(), "Rachel")
+        audio = generate(text=text, voice=voice, model="eleven_multilingual_v2")
+        filepath = os.path.join(OUTPUT_DIR, filename)
+        save(audio, filepath)
+    except Exception as e:
+        print(f"[HATA] Ses üretilemedi: {character} – {e}")
 def generate_all():
     for idx, scene in enumerate(scene_data, start=1):
         character = scene["character"]
