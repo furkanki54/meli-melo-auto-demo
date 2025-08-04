@@ -2,7 +2,7 @@ from elevenlabs import generate, save
 from scene_texts import scene_data
 import os
 
-OUTPUT_DIR = "voices"
+OUTPUT_DIR = "static/voices"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 VOICE_MAP = {
